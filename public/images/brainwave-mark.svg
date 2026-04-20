@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <path d="M8 55 L22 55 L28 38 L35 72 L42 45 L48 62 L55 55 L112 55"
+        stroke="url(#wave)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38 68 C28 68 20 60 20 50 C20 42 25 36 32 34 C32 26 38 20 46 20 C50 20 54 22 57 25 C60 22 64 20 68 20 C76 20 82 26 82 34 C89 36 94 42 94 50 C94 60 86 68 76 68 C74 74 70 78 64 80 L64 90 L50 90 L50 80 C44 78 40 74 38 68Z"
+        fill="url(#brain)" opacity="0.9"/>
+  <defs>
+    <linearGradient id="wave" x1="0" y1="0" x2="120" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5b8dff"/>
+      <stop offset="100%" stop-color="#c45bff"/>
+    </linearGradient>
+    <linearGradient id="brain" x1="20" y1="20" x2="94" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5b8dff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#c45bff" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+</svg>
