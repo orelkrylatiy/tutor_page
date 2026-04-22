@@ -1,14 +1,6 @@
 import { ArrowRight } from 'lucide-react';
-
-const marqueeItems = [
-  'Информатика ЕГЭ',
-  'Профильная математика',
-  'React & TypeScript',
-  'Веб-разработка с нуля',
-  'Индивидуальный план',
-  'ITMO Computer Science',
-  'Т-Банк · 3 года',
-];
+import Image from 'next/image';
+import { marqueeItems } from '../data/hero';
 
 export default function Hero() {
   return (
@@ -53,7 +45,14 @@ export default function Hero() {
         </div>
 
         <div className="hero-photo">
-          <img src="/images/photo_2026-04-18_14-56-14.jpg" alt="Максим Сергеевич" />
+          <Image
+            src="/images/photo_2026-04-18_14-56-14.jpg"
+            alt="Максим Сергеевич"
+            className="hero-photo-img"
+            fill
+            sizes="(max-width: 860px) 100vw, 400px"
+            priority
+          />
           <div className="hero-photo-grad" />
           <div className="hero-badge">
             <div className="hero-badge-name">Максим Сергеевич</div>

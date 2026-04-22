@@ -1,8 +1,15 @@
-export default function Button({ href, children, className = '', ...props }) {
-  const Tag = href ? 'a' : 'button';
+export default function Button({ href, children, className = '', type, ...props }) {
+  if (href) {
+    return (
+      <a href={href} className={className} {...props}>
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <Tag href={href} className={className} {...props}>
+    <button type={type ?? 'button'} className={className} {...props}>
       {children}
-    </Tag>
+    </button>
   );
 }

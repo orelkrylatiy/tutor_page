@@ -1,7 +1,8 @@
 import Header from '../components/Header';
 import Hero from '../components/Hero';
 import Benefits from '../components/Benefits';
-import Pricing from '../components/Pricing';
+import Reviews from '../components/Reviews';
+import CtaSection from '../components/CtaSection';
 import Footer from '../components/Footer';
 import Effects from '../components/Effects';
 
@@ -13,7 +14,8 @@ export default function Page() {
       <main>
         <Hero />
         <Benefits />
-        <Pricing />
+        <Reviews />
+        <CtaSection />
       </main>
       <Footer />
     </>
