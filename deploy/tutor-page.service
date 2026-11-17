@@ -1,0 +1,19 @@
+[Unit]
+Description=Tutor Page Next.js landing page
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/var/www/projects/tutor-page/current
+Environment=NODE_ENV=production
+Environment=PORT=3001
+ExecStart=/usr/bin/npm start -- --hostname 127.0.0.1 --port 3001
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
