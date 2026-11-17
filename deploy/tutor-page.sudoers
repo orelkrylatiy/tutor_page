@@ -1,0 +1,2 @@
+# Verify the systemctl path with: command -v systemctl
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart tutor-page.service, /usr/bin/systemctl is-active tutor-page.service, /usr/bin/systemctl stop tutor-page.service

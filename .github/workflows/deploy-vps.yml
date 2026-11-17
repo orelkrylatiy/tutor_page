@@ -1,0 +1,118 @@
+name: Deploy to VPS (service artifact)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-tutor-page-vps
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build Next.js runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          ARTIFACT_DIR="$RUNNER_TEMP/tutor-page-runtime"
+          mkdir -p "$ARTIFACT_DIR"
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='deploy-artifact/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='.next/cache/' \
+            ./ "$ARTIFACT_DIR/"
+          npm ci --omit=dev --no-audit --no-fund --prefix "$ARTIFACT_DIR"
+          test -s "$ARTIFACT_DIR/.next/BUILD_ID"
+          test -x "$ARTIFACT_DIR/node_modules/.bin/next"
+          tar -czf "$RUNNER_TEMP/tutor-page-runtime.tar.gz" -C "$ARTIFACT_DIR" .
+
+      - name: Upload runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutor-page-runtime
+          path: ${{ runner.temp }}/tutor-page-runtime.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.ENABLE_VPS_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download runtime artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tutor-page-runtime
+          path: runtime-artifact
+
+      - name: Unpack runtime artifact
+        run: |
+          set -euo pipefail
+          mkdir -p deploy-artifact
+          tar -xzf runtime-artifact/tutor-page-runtime.tar.gz -C deploy-artifact
+          test -s deploy-artifact/.next/BUILD_ID
+          test -x deploy-artifact/node_modules/.bin/next
+
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '15.235.247.12' }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER || 'deploy' }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9.:-]+$ ]] || { echo "Invalid DEPLOY_HOST"; exit 1; }
+          [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Invalid DEPLOY_USER"; exit 1; }
+          test -n "$DEPLOY_SSH_KEY" || { echo "Missing DEPLOY_SSH_KEY secret"; exit 1; }
+          test -n "$DEPLOY_KNOWN_HOSTS" || { echo "Missing DEPLOY_KNOWN_HOSTS secret"; exit 1; }
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<EOF
+          Host deploy-target
+            HostName $DEPLOY_HOST
+            User $DEPLOY_USER
+            IdentityFile $HOME/.ssh/id_ed25519
+            UserKnownHostsFile $HOME/.ssh/known_hosts
+            StrictHostKeyChecking yes
+            BatchMode yes
+          EOF
+          chmod 600 "$HOME/.ssh/config"
+
+      - name: Upload and deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_ID="${GITHUB_SHA:0:12}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          REMOTE_DIR="/var/lib/deploy-manager/incoming/tutor-page/$RELEASE_ID/payload"
+          ssh deploy-target "mkdir -p '$REMOTE_DIR'"
+          rsync -az --delete -e "ssh -F $HOME/.ssh/config" deploy-artifact/ "deploy-target:$REMOTE_DIR/"
+          ssh deploy-target "deploy-manager deploy tutor-page --release-id '$RELEASE_ID'"

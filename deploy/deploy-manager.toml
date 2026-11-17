@@ -1,0 +1,10 @@
+[project]
+type = "service"
+delivery = "artifact"
+keep_releases = 10
+healthcheck_url = "http://127.0.0.1:3001/"
+shared_files = []
+shared_dirs = []
+
+[service]
+unit = "tutor-page.service"
